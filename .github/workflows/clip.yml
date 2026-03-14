@@ -39,7 +39,7 @@ jobs:
       - name: Upload to Google Drive
         uses: adityak74/google-drive-upload-git-action@main
         with:
-          credentials: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          credentials: ${{ secrets.DRIVEKI }}
           filename: "${{ github.event.inputs.fileName }}.mp4"
-          folderId: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+          folderId: ${{ secrets.DRIVEFOLDER2 }}
           overwrite: "true"
