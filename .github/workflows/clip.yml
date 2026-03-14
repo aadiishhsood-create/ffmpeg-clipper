@@ -22,25 +22,35 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get install -y ffmpeg bc
+          sudo apt-get install -y ffmpeg
           pip install -U yt-dlp
+
+      - name: Write cookies file
+        run: echo "$YOUTUBE_COOKIES" > cookies.txt
+        env:
+          YOUTUBE_COOKIES: ${{ secrets.YOUTUBE_COOKIES }}
 
       - name: Download and Clip Video
         run: |
-          DURATION=$(echo "${{ github.event.inputs.endTime }} - ${{ github.event.inputs.startTime }}" | bc)
+          START="${{ github.event.inputs.startTime }}"
+          END="${{ github.event.inputs.endTime }}"
+          URL="${{ github.event.inputs.videoUrl }}"
+          FILENAME="${{ github.event.inputs.fileName }}"
+
           yt-dlp \
-            --no-check-certificate \
-            --add-header "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            --cookies cookies.txt \
+            --extractor-args "youtube:player_client=android" \
             -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
             --merge-output-format mp4 \
             -o "input.mp4" \
-            "${{ github.event.inputs.videoUrl }}"
+            "$URL"
+
           ffmpeg -i input.mp4 \
-            -ss ${{ github.event.inputs.startTime }} \
-            -t $DURATION \
+            -ss "$START" \
+            -to "$END" \
             -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" \
             -c:v libx264 -c:a aac -preset fast \
-            "${{ github.event.inputs.fileName }}.mp4"
+            "${FILENAME}.mp4"
 
       - name: Upload to Google Drive
         uses: adityak74/google-drive-upload-git-action@main
