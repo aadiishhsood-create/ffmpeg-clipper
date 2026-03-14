@@ -23,15 +23,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y ffmpeg bc
-          pip install yt-dlp
+          pip install -U yt-dlp
 
       - name: Download and Clip Video
         run: |
-          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]" \
-            --download-sections "*${{ github.event.inputs.startTime }}-${{ github.event.inputs.endTime }}" \
+          DURATION=$(echo "${{ github.event.inputs.endTime }} - ${{ github.event.inputs.startTime }}" | bc)
+          yt-dlp \
+            --no-check-certificate \
+            --add-header "User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+            -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+            --merge-output-format mp4 \
             -o "input.mp4" \
             "${{ github.event.inputs.videoUrl }}"
           ffmpeg -i input.mp4 \
+            -ss ${{ github.event.inputs.startTime }} \
+            -t $DURATION \
             -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" \
             -c:v libx264 -c:a aac -preset fast \
             "${{ github.event.inputs.fileName }}.mp4"
