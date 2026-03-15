@@ -39,10 +39,12 @@ jobs:
           URL="${{ github.event.inputs.videoUrl }}"
           FILENAME="${{ github.event.inputs.fileName }}"
 
+          export PATH="$HOME/.deno/bin:$PATH"
+
           yt-dlp \
             --cookies cookies.txt \
             --extractor-args "youtube:player_client=web" \
-            --js-interpreter deno \
+            --js-runtimes deno \
             -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
             --merge-output-format mp4 \
             -o "input.mp4" \
