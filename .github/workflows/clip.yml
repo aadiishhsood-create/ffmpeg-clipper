@@ -38,9 +38,7 @@ jobs:
           END="${{ github.event.inputs.endTime }}"
           URL="${{ github.event.inputs.videoUrl }}"
           FILENAME="${{ github.event.inputs.fileName }}"
-
           export PATH="$HOME/.deno/bin:$PATH"
-
           yt-dlp \
             --cookies cookies.txt \
             --extractor-args "youtube:player_client=web" \
@@ -50,7 +48,6 @@ jobs:
             --merge-output-format mp4 \
             -o "input.mp4" \
             "$URL"
-
           ffmpeg -i input.mp4 \
             -ss "$START" \
             -to "$END" \
@@ -59,9 +56,14 @@ jobs:
             "${FILENAME}.mp4"
 
       - name: Upload to Google Drive
-        uses: adityak74/google-drive-upload-git-action@main
-        with:
-          credentials: ${{ secrets.DRIVEKI }}
-          filename: "${{ github.event.inputs.fileName }}.mp4"
-          folderId: ${{ secrets.DRIVEFOLDER2 }}
-          overwrite: "true"
+        env:
+          GDRIVE_CREDS: ${{ secrets.DRIVEKI }}
+          FOLDER_ID: ${{ secrets.DRIVEFOLDER2 }}
+          FILENAME: ${{ github.event.inputs.fileName }}
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          echo "$GDRIVE_CREDS" > /tmp/creds.json
+          rclone copy "${FILENAME}.mp4" :drive: \
+            --drive-service-account-file /tmp/creds.json \
+            --drive-root-folder-id "$FOLDER_ID" \
+            -v
